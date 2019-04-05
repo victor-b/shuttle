@@ -41,6 +41,25 @@
               "name": "SSH Shop - Opens in New Window",
               "theme": "basic",
               "title": "title of new window"
+            },
+            {
+                "name": "open all",
+                "commands": [
+                    {
+                        "cmd": "ssh username@blog2.example.com",
+                        "inTerminal": "tab",
+                        "name": "SSH blog - Opens in Tab of active window",
+                        "theme": "basic",
+                        "title": "title of tab"
+                    },
+                    {
+                        "cmd": "ssh username@shop1.example.com",
+                        "inTerminal": "new",
+                        "name": "SSH Shop - Opens in New Window",
+                        "theme": "basic",
+                        "title": "title of new window"
+                    }
+                ]
             }
           ]
         }

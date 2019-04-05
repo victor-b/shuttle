@@ -368,10 +368,11 @@
     NSMutableDictionary* leafs = [[NSMutableDictionary alloc] init];
     
     for (NSDictionary* item in data) {
-        if (item[@"cmd"] && item[@"name"]) {
+        if (item[@"name"] && (item[@"cmd"] || item[@"commands"])) {
             // this is a leaf
             [leafs setObject:item forKey:item[@"name"]];
-        } else {
+        }
+        else {
             // must be a menu - add all instances
             for (NSString* key in item) {
                 [menus setObject:item[key] forKey:key];
@@ -403,25 +404,57 @@
     for (NSString *key in leafKeys) {
         NSDictionary* cfg = leafs[key];
         NSMenuItem* menuItem = [[NSMenuItem alloc] init];
-        
-        //Get the command we are going to run in termainal
-        NSString *menuCmd = cfg[@"cmd"];
-        //Get the theme for this terminal session
-        NSString *termTheme = cfg[@"theme"];
-        //Get the name for the terminal session
-        NSString *termTitle = cfg[@"title"];
-        //Get the value of setting inTerminal
-        NSString *termWindow = cfg[@"inTerminal"];
+
         //Get the menu name will will use this as the title if title is null.
         [self separatorSortRemoval:cfg[@"name"]];
+
+        NSObject* obj = cfg[@"commands"];
         
-        //Place the terminal command, theme, and title into an comma delimited string
-        NSString *menuRepObj = [NSString stringWithFormat:@"%@¬_¬%@¬_¬%@¬_¬%@¬_¬%@", menuCmd, termTheme, termTitle, termWindow, menuName];
+        if (obj != nil && [obj isKindOfClass:[NSArray class]]) {
+            
+            NSArray* commands = (NSArray*)obj;
+            if ([commands count] > 0) {
+                NSMutableArray* menuRepObjects = [[NSMutableArray alloc] init];
+                for (NSDictionary *cmd in commands) {
+
+                    //Get the command we are going to run in termainal
+                    NSString *menuCmd = cmd[@"cmd"];
+                    //Get the theme for this terminal session
+                    NSString *termTheme = cmd[@"theme"];
+                    //Get the name for the terminal session
+                    NSString *termTitle = cmd[@"title"];
+                    //Get the value of setting inTerminal
+                    NSString *termWindow = cmd[@"inTerminal"];
+                    
+                    //Place the terminal command, theme, and title into an comma delimited string
+                    NSString *menuRepObj = [NSString stringWithFormat:@"%@¬_¬%@¬_¬%@¬_¬%@¬_¬%@", menuCmd, termTheme, termTitle, termWindow, menuName];
+                    [menuRepObjects addObject:menuRepObj];
+                }
+                [menuItem setRepresentedObject:menuRepObjects];
+                [menuItem setAction:@selector(openHosts:)];
+            }
+        }
+        else {
         
+            //Get the command we are going to run in termainal
+            NSString *menuCmd = cfg[@"cmd"];
+            //Get the theme for this terminal session
+            NSString *termTheme = cfg[@"theme"];
+            //Get the name for the terminal session
+            NSString *termTitle = cfg[@"title"];
+            //Get the value of setting inTerminal
+            NSString *termWindow = cfg[@"inTerminal"];
+            
+            //Place the terminal command, theme, and title into an comma delimited string
+            NSString *menuRepObj = [NSString stringWithFormat:@"%@¬_¬%@¬_¬%@¬_¬%@¬_¬%@", menuCmd, termTheme, termTitle, termWindow, menuName];
+            
+            [menuItem setRepresentedObject:menuRepObj];
+            [menuItem setAction:@selector(openHost:)];
+        }
+
         [menuItem setTitle:menuName];
-        [menuItem setRepresentedObject:menuRepObj];
-        [menuItem setAction:@selector(openHost:)];
         [m insertItem:menuItem atIndex:pos++];
+
         if (addSeparator) {
             [m insertItem:[NSMenuItem separatorItem] atIndex:pos++];
         }
@@ -463,16 +496,27 @@
     }
 }
 
+- (void) openHosts:(NSMenuItem *) sender {
+    NSArray* multipleCommands = [sender representedObject];
+    for (NSString *cmd in multipleCommands) {
+        NSArray *objectsFromJSON = [cmd componentsSeparatedByString:(@"¬_¬")];
+        [self openHostItem: objectsFromJSON];
+    }
+}
+
 - (void) openHost:(NSMenuItem *) sender {
+    //Place the comma delimited string of menu item settings into an array
+    NSArray *objectsFromJSON = [[sender representedObject] componentsSeparatedByString:(@"¬_¬")];
+    [self openHostItem: objectsFromJSON];
+}
+
+- (void) openHostItem:(NSArray *) objectsFromJSON {
     //NSLog(@"sender: %@", sender);
     //NSLog(@"Command: %@",[sender representedObject]);
     
     NSString *errorMessage;
     NSString *errorInfo;
     
-    
-    //Place the comma delimited string of menu item settings into an array
-    NSArray *objectsFromJSON = [[sender representedObject] componentsSeparatedByString:(@"¬_¬")];
     
     //This is our command that will be run in the terminal window
     NSString *escapedObject;
